@@ -1,3 +1,5 @@
+https://to-do-next-ts-ten.vercel.app/
+
 ## Architecture
 
 This project uses **Feature-Sliced Design (FSD)** for a modern Next.js 16, React 19, and TypeScript application.
