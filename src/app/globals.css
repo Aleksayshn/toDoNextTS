@@ -3,6 +3,8 @@
 :root {
   --background: #102542;
   --foreground: #f8fafc;
+  --font-app-body: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-app-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 @theme inline {

@@ -12,7 +12,7 @@ The project follows the standard top-down FSD layering model:
 1. `app`
    Application-wide providers and startup composition.
 2. `pages`
-   Route-level screens.
+   Route-level screens. In this Next.js repo the page layer is implemented as `src/views` because `src/pages` is a reserved framework directory.
 3. `widgets`
    Large UI blocks composed from features and entities.
 4. `features`
@@ -26,7 +26,7 @@ The project follows the standard top-down FSD layering model:
 
 Each layer is divided into slices with a single responsibility:
 
-- `pages/home-page`
+- `views/home-page`
 - `widgets/todo-shell`
 - `widgets/todo-list`
 - `widgets/todo-stats`
@@ -43,7 +43,7 @@ Each layer is divided into slices with a single responsibility:
 Each slice exposes an `index.ts` public API. Consumers import from the slice root rather than reaching into internal folders:
 
 ```ts
-import { HomePage } from "@/src/pages/home-page";
+import { HomePage } from "@/src/views/home-page";
 import { TodoShell } from "@/src/widgets/todo-shell";
 import { useTodoStore } from "@/src/entities/todo";
 ```
@@ -55,13 +55,13 @@ This keeps internal refactors local to a slice and reduces accidental coupling.
 Dependencies always point downward:
 
 ```text
-app -> pages -> widgets -> features -> entities -> shared
+app -> pages(views) -> widgets -> features -> entities -> shared
 ```
 
 Applied in this project:
 
-- `app/page.tsx` imports `src/app/providers` and `src/pages/home-page`
-- `pages/home-page` imports `widgets/todo-shell`
+- `src/app/page.tsx` imports `src/app/providers` and `src/views/home-page`
+- `views/home-page` imports `widgets/todo-shell`
 - `widgets/todo-list` imports feature actions and the todo entity
 - `features/*` import only `entities/todo`
 - `entities/todo` does not import from upper layers
@@ -80,7 +80,7 @@ src/
   app/
     providers/
 
-  pages/
+  views/
     home-page/
 
   widgets/
