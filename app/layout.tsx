@@ -14,8 +14,8 @@ const monoFont = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Advanced Todo List",
-  description: "React 19 + TypeScript learning project with clean architecture",
+  title: "Feature-Sliced Todo List",
+  description: "Next.js 16 + React 19 todo app structured with Feature-Sliced Design",
 };
 
 export default function RootLayout({

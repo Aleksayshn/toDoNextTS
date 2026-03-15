@@ -1,5 +1,10 @@
-import { TodoApp } from "@/src/features/todos/components/todo-app";
+import { AppProvider } from "@/src/app/providers";
+import { HomePage } from "@/src/pages/home-page";
 
 export default function Home() {
-  return <TodoApp />;
+  return (
+    <AppProvider>
+      <HomePage />
+    </AppProvider>
+  );
 }

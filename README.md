@@ -1,46 +1,74 @@
 ## Architecture
 
-This project uses a layered architecture inspired by **Clean Architecture** and **Domain-Driven Design (DDD)**.  
-The goal is to keep business rules independent from React, persistence, and UI concerns.
+This project uses **Feature-Sliced Design (FSD)** for a modern Next.js 16, React 19, and TypeScript application.
+The codebase is organized around business boundaries, slice public APIs, and strict import direction instead of mixing state, UI, and infrastructure inside one feature folder.
 
-### Why this architecture?
+## FSD principles used
 
-- Keeps **core business logic framework-agnostic**
-- Improves **maintainability** as the app grows
-- Makes logic easier to **test and refactor**
-- Reduces coupling between **UI, state management, and persistence**
-- Encourages clear boundaries and predictable data flow
+### Layers
 
----
+The project follows the standard top-down FSD layering model:
 
-## Architecture Overview
+1. `app`
+   Application-wide providers and startup composition.
+2. `pages`
+   Route-level screens.
+3. `widgets`
+   Large UI blocks composed from features and entities.
+4. `features`
+   User actions and scenarios.
+5. `entities`
+   Stable business data and behavior.
+6. `shared`
+   Cross-cutting reusable code.
 
-The application is split into four main layers:
+### Slices
 
-1. **Domain**
-   Contains the core business model and contracts.
-2. **Application**
-   Contains use cases and query logic.
-3. **Infrastructure**
-   Contains technical implementations such as browser persistence.
-4. **Features / UI**
-   Contains React components, state orchestration, and user interaction logic.
+Each layer is divided into slices with a single responsibility:
 
-```text
-UI / Feature Components
-        ↓
-Feature State / Context
-        ↓
-Application Use Cases / Queries
-        ↓
-Domain Models / Contracts
-        ↓
-Infrastructure Adapters
+- `pages/home-page`
+- `widgets/todo-shell`
+- `widgets/todo-list`
+- `widgets/todo-stats`
+- `features/create-todo`
+- `features/change-todo-view`
+- `features/edit-todo`
+- `features/toggle-todo`
+- `features/delete-todo`
+- `features/clear-completed-todos`
+- `entities/todo`
+
+### Public API
+
+Each slice exposes an `index.ts` public API. Consumers import from the slice root rather than reaching into internal folders:
+
+```ts
+import { HomePage } from "@/src/pages/home-page";
+import { TodoShell } from "@/src/widgets/todo-shell";
+import { useTodoStore } from "@/src/entities/todo";
 ```
 
----
+This keeps internal refactors local to a slice and reduces accidental coupling.
 
-## Folder Structure
+### Import direction rules
+
+Dependencies always point downward:
+
+```text
+app -> pages -> widgets -> features -> entities -> shared
+```
+
+Applied in this project:
+
+- `app/page.tsx` imports `src/app/providers` and `src/pages/home-page`
+- `pages/home-page` imports `widgets/todo-shell`
+- `widgets/todo-list` imports feature actions and the todo entity
+- `features/*` import only `entities/todo`
+- `entities/todo` does not import from upper layers
+
+That rule is the main scalability mechanism in FSD.
+
+## Folder structure
 
 ```text
 app/
@@ -49,142 +77,72 @@ app/
   page.tsx
 
 src/
-  application/
-    todos/
-      queries/
-      use-cases/
+  app/
+    providers/
 
-  domain/
-    todos/
-      entities/
-      repositories/
+  pages/
+    home-page/
+
+  widgets/
+    todo-list/
+    todo-shell/
+    todo-stats/
 
   features/
-    todos/
-      components/
-      context/
-      hooks/
+    change-todo-view/
+    clear-completed-todos/
+    create-todo/
+    delete-todo/
+    edit-todo/
+    toggle-todo/
+
+  entities/
+    todo/
+      api/
+      lib/
       model/
-
-  infrastructure/
-    todos/
 ```
 
----
+## Responsibility split
 
-## Main Layers and Responsibilities
+### `entities/todo`
 
-### `app/`
-Next.js application entry layer.
+Owns the stable business model:
 
-- Defines the root layout and global styles
-- Connects the route entry point to the Todo feature
-- Keeps routing concerns separate from feature logic
+- todo types and helpers
+- pure operations for create, rename, toggle, delete, clear
+- read-side queries for filtering and metrics
+- repository contract and browser adapter
+- entity-level store provider and hook
 
-### `src/domain/`
-Core business layer.
+### `features/*`
 
-- Defines the `Todo` entity and related types
-- Declares repository contracts such as `TodoRepository`
-- Contains rules that should not depend on React or storage details
+Each feature models one user intention:
 
-### `src/application/`
-Application logic layer.
+- `create-todo`: create form
+- `change-todo-view`: search, filter, sort
+- `edit-todo`: inline title editing
+- `toggle-todo`: completion toggle
+- `delete-todo`: delete action
+- `clear-completed-todos`: bulk cleanup
 
-- Implements **use cases** such as create, rename, toggle, and delete todo
-- Implements **queries** for filtering, sorting, and metrics
-- Orchestrates domain behavior without knowing about UI rendering
+### `widgets/*`
 
-### `src/infrastructure/`
-Technical implementation layer.
+Widgets compose the UI:
 
-- Implements the repository contract using `localStorage`
-- Provides seed data for initial app state
-- Adapts browser-specific APIs to the abstractions defined in the domain layer
+- `todo-shell`: main page shell
+- `todo-list`: list rendering and card composition
+- `todo-stats`: metrics and supporting controls
 
-### `src/features/todos/`
-Feature layer for the Todo module.
+### `src/app` and root `app/`
 
-- `components/`: reusable UI pieces
-- `context/`: feature-level state boundary using React Context
-- `hooks/`: custom hooks for accessing feature state
-- `model/`: reducer, actions, and feature state definitions
+- root `app/` remains the Next.js routing layer
+- `src/app/providers` contains app-level composition such as store providers
 
----
+## Why this structure is cleaner
 
-## Purpose of Each Major Folder
-
-- `app/`  
-  Route entry, layout composition, and global styling.
-
-- `src/domain/`  
-  Business entities and contracts. The most stable and reusable part of the system.
-
-- `src/application/`  
-  Use cases and read models that transform domain data into application behavior.
-
-- `src/infrastructure/`  
-  External and technical concerns such as persistence.
-
-- `src/features/`  
-  React-facing feature implementation, including UI composition and state management.
-
----
-
-## Key Features
-
-- Advanced Todo management:
-  - create
-  - rename
-  - toggle completion
-  - delete
-  - clear completed
-- Filtering by status
-- Sorting by multiple strategies
-- Search support
-- Derived metrics and progress overview
-- Local persistence through browser storage
-- Reducer-driven state updates
-- React 19 patterns such as deferred updates and transitions
-
----
-
-## Data Flow Between Layers
-
-```text
-User Action
-  → Feature Component
-  → Context / Reducer
-  → Application Use Case or Query
-  → Domain Types / Rules
-  → Infrastructure Repository (for persistence)
-  → Updated State
-  → UI Re-render
-```
-
-### Interaction details
-
-- **Components** trigger actions from the feature context
-- The **reducer** updates state predictably
-- **Use cases** handle write operations
-- **Queries** derive filtered lists and metrics
-- The **repository adapter** loads and saves todos
-- The **domain layer** provides the shared language and contracts used by all other layers
-
----
-
-## How the Layers Interact
-
-- **Features** depend on **application** logic, not on storage details
-- **Application** depends on **domain** models and contracts
-- **Infrastructure** implements **domain** contracts
-- **Domain** depends on nothing outside itself
-
-This keeps dependency direction inward, which is a core Clean Architecture principle.
-
----
-
-## Summary
-
-This structure is intentionally designed to make a small project feel production-ready without unnecessary complexity.  
-It demonstrates how to separate **business rules**, **technical concerns**, and **UI composition** so the codebase remains clear, scalable, and easier to evolve.
+- Layers express architectural intent directly.
+- Slices are easier to grow without turning into god-modules.
+- Public APIs make internal reorganization safe.
+- Import direction is easy to reason about and enforce.
+- The todo entity remains the stable center of the app while features and widgets stay replaceable.
